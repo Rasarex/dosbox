@@ -1,0 +1,74 @@
+
+exe(
+     wd /tr=rsi !
+   )
+
+asm(
+    tasm /m3 !
+    tlink /t/3 !.obj
+    del !.map
+    del !.obj
+   )
+
+asm{
+;    tasm /m3 !
+;    tlink /3 !.obj
+;    del !.map
+;    del !.obj
+    tasm !
+    tlink !.obj
+    del !.map
+    del !.obj
+   }
+
+pas{
+    turbo !
+   }
+
+cpp,c(
+        wcl386 /oneatx /zp4 /4 /fp3 /5r !
+        del !.obj
+        pmwbind /r !.exe
+        pmwlite !.exe
+rem        gcc !.! -o !.exe -lalleg
+     )
+
+cpp,c{
+        wcl386 /hc /d2 !
+        del !.obj
+rem         gcc !.! -o !.exe -lalleg
+     }
+
+zip(
+     md !
+     pkunzip ! ! -d
+   )
+
+rar(
+     md !
+     rar x ! !
+   )
+
+mp3{
+     mp3 !.!
+   }
+
+dms{
+     c:\u\o\dms2adf !.dms !.adf
+     del !.dms
+   }
+
+msa{
+     c:\u\o\msatost !.msa
+   }
+dsk{
+     dsk2sad !.dsk
+     del !.dsk
+   }
+sad{
+     sad2dsk !.sad
+     del !.sad
+   }
+smd{
+     ucon z !.smd
+   }

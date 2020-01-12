@@ -1,0 +1,5 @@
+tasm PYRADV.ASM
+tlink PYRADV.OBJ
+del PYRADV.OBJ
+del PYRADV.MAP
+cls

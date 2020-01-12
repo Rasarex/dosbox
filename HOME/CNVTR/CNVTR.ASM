@@ -13,49 +13,91 @@ start:          mov     ax,DATA
                 int     10h
                 ;set cursor at begining
                 xor     dx,dx
+                mov     bh,0h
                 mov     ah,02h
                 int     10h
                 ;save bp
                 xor     cx,cx
                 push    bp
-readloop:
                 mov     bp, input_data
-                add     bp,cx
+readloop:
                 mov     ah,0
                 int     16h
+                xor     ah,ah
                 mov     [bp],ax
-                add     cx,1
+                inc     bp
                 cmp     al,0Dh
                 je      exitloop
                 cmp     cx,4
                 jnl     exitloop
+                call    printchar
                 call    advance_cursor
                 jmp     readloop
 exitloop:
+                call    newline
 toint:
-                xor     cx,cx
-                xor     dx,dx
                 mov     bp, input_data
+
                 cmp     [bp],2Dh
-                jnz     tiloop 
-setnegative:    mov     ax,1 
-                push    ax
-                add     bp,1
+                jne     tiloop
+                call    printchar
+setnegative:    
+                mov     si,1 
+                inc     bp
                 
+                xor     dx,dx
 tiloop:         
                 cmp     [bp],0Dh
-                jz      exittiloop
+                je      exittiloop
+                mov     ax,[bp]
+                call    printchar
+                sub     ax,30h
+                jl      exit 
                 cmp     [bp],0
                 jnl     exit
                 cmp     [bp],10
                 jge     exit
                 mov     ax,[bp]
-                sub     ax,30h
                 add     dx,ax
+                inc     bp
                 jmp     tiloop
 exittiloop: 
-                mov     int_data,ax
+                mov     int_data,dx
                 pop     bp
+smr:
+                push    bp
+                mov     bp,sp
+                sub     bp,10 ; allocate 5 dwords on stack
+                mov     ax, int_data
+                xor     ah,ah
+                and     ax,80h
+                mov     [bp],ax
+
+                mov     cx,2
+                mov     dx,64 ;mask
+smrloop:        
+                mov     bx,int_data
+                add     bp,2
+                and     bx,dx
+                mov     [bp],bx
+                div     cx
+                mov     al,bl
+                call    printchar
+                call    advance_cursor
+                cmp     dx,0
+                jne     smrloop
+                add     bp,2
+                mov     [bp],0
+                pop     bp
+                ret
+newline:
+                mov     ah,03h
+                int     10h
+                add     dh,1
+                xor     dl,dl
+                mov     ah,02h
+                int     10h
+                ret
 advance_cursor:
                 mov     ah,03h
                 int     10h
@@ -64,10 +106,18 @@ advance_cursor:
                 int     10h
                 xor     cx,cx
                 ret
+printchar:
+                mov     cx,1
+                mov     ah,09h
+                mov     bl,07
+                mov     bh,0
+                int     10h
+                ret
 exit:
       		    mov     ah,4ch
 	            mov	    al,0
 	            int	    21h
+
 
 TEXT ends
 

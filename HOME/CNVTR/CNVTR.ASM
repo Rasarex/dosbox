@@ -18,77 +18,127 @@ start:          mov     ax,DATA
                 int     10h
                 ;save bp
                 xor     cx,cx
-                push    bp
-                mov     bp, input_data
+                mov     ax,0Dh
+                push    ax
 readloop:
                 mov     ah,0
                 int     16h
-                xor     ah,ah
-                mov     [bp],ax
-                inc     bp
+                push    ax
                 cmp     al,0Dh
                 je      exitloop
                 cmp     cx,4
                 jnl     exitloop
                 call    printchar
+                mov     si,1
                 call    advance_cursor
+                inc     bp
                 jmp     readloop
 exitloop:
                 call    newline
-toint:
-                mov     bp, input_data
-
-                cmp     [bp],2Dh
-                jne     tiloop
-                call    printchar
-setnegative:    
-                mov     si,1 
-                inc     bp
-                
-                xor     dx,dx
-tiloop:         
-                cmp     [bp],0Dh
+                mov     si,1
+                xor     di,di
+                pop     ax ;delete \r
+tiloop:
+                pop     ax
+                xor     ah,ah
+                cmp     al,2Dh
+                jne     notneg
+                mov     dx,di
+                not     dl
+                add     dl,1
+                mov     di,dx
+                jmp     exittiloop
+notneg:         cmp     al,0Dh
                 je      exittiloop
-                mov     ax,[bp]
-                call    printchar
-                sub     ax,30h
-                jl      exit 
-                cmp     [bp],0
-                jnl     exit
-                cmp     [bp],10
-                jge     exit
-                mov     ax,[bp]
-                add     dx,ax
-                inc     bp
+                cmp     al,48
+                jge     tinext
+                jmp     exit
+tinext:         cmp     al,58
+                jl      tiinext
+                jmp     exit
+tiinext:        sub     al,30h   
+                mul     si
+                add     di,ax
+                mov     ax,10
+                mul     si
+                mov     si,ax
                 jmp     tiloop
 exittiloop: 
-                mov     int_data,dx
-                pop     bp
-smr:
-                push    bp
-                mov     bp,sp
-                sub     bp,10 ; allocate 5 dwords on stack
-                mov     ax, int_data
-                xor     ah,ah
-                and     ax,80h
-                mov     [bp],ax
-
-                mov     cx,2
-                mov     dx,64 ;mask
-smrloop:        
+                mov     int_data,di
+                call    smr
+                call    onecompl
+                call    twocompl
+                call    hex
+                jmp     exit
+hex:
+                mov     si,1
+                call    advance_cursor
                 mov     bx,int_data
-                add     bp,2
-                and     bx,dx
-                mov     [bp],bx
-                div     cx
-                mov     al,bl
+                shr     bx,4
+                and     bx,15
+                mov     al,hextable[bx]
                 call    printchar
                 call    advance_cursor
-                cmp     dx,0
-                jne     smrloop
-                add     bp,2
-                mov     [bp],0
-                pop     bp
+                mov     bx,int_data
+                and     bx,15
+                mov     al,hextable[bx]
+                call    printchar
+                call    newline
+                ret
+
+twocompl:
+                mov     ax,int_data
+                xor     cx,cx
+                call    printbits
+                call    newline
+                ret
+onecompl:
+                mov     dx,int_data
+                xor     cx,cx
+                mov     al,dl
+                shr     al,7
+                jz      ocomplepos
+                add     dl,1
+ocomplepos:     
+                mov     al,dl
+                call    printbits
+                call    newline
+                ret
+smr:            
+                mov     dx,int_data
+                mov     ax,int_data
+                xor     ah,ah
+                shr     al,7
+                jz      smrnoneg
+                not     dl
+                inc     dl
+                or      dl,128
+smrnoneg:       
+                mov     ax,dx
+                mov     cx,0
+                call    printbits
+                call    newline
+                ret
+printbits:      
+                mov     si,8
+                call    advance_cursor
+                xor     cx,cx
+printloop:
+                push    ax
+                push    cx
+
+                and     ax,1
+                add     ax,30h
+                call    printchar
+                call    back_cursor
+
+                pop     cx
+                pop     ax
+
+                shr     ax,1
+                inc     cx
+                cmp     cx,8
+                jl      printloop
                 ret
 newline:
                 mov     ah,03h
@@ -101,7 +151,15 @@ newline:
 advance_cursor:
                 mov     ah,03h
                 int     10h
-                add     dx,1
+                add     dx,si
+                mov     ah,02h
+                int     10h
+                xor     cx,cx
+                ret
+back_cursor:
+                mov     ah,03h
+                int     10h
+                sub     dx,1
                 mov     ah,02h
                 int     10h
                 xor     cx,cx
@@ -124,6 +182,8 @@ TEXT ends
 DATA segment
 input_data      dw 10 dup(0)
 int_data        dw 1  dup(0)
+zm_data         dw 1 dup(0)
+hextable        db '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
 DATA ends
 
 LOCAL_STACK     segment STACK

@@ -8,8 +8,8 @@ start:          mov     ax,DATA
                 ;Czysczenie ekranu
                 mov     ax,0600h
                 mov     bh,7
-                mov     cx,0 
-                mov     dx,1847h
+                mov     cx,0
+                mov     dx,184Ch
                 int     10h
                 ;set cursor at begining
                 xor     dx,dx
@@ -24,11 +24,17 @@ readloop:
                 mov     ah,0
                 int     16h
                 push    ax
-                cmp     al,0Dh
+                cmp     al,0Dh  ;enter
                 je      exitloop
-                cmp     cx,4
-                jnl     exitloop
+                cmp     al,08h ;backspace
+                jne     rl
+                call    back_cursor
+                pop     ax ;backspace
+                pop     ax ;character
+                mov     ax,20h
                 call    printchar
+                jmp     readloop
+rl:             call    printchar
                 mov     si,1
                 call    advance_cursor
                 inc     bp
@@ -88,17 +94,15 @@ hex:
 
 twocompl:
                 mov     ax,int_data
-                xor     cx,cx
                 call    printbits
                 call    newline
                 ret
 onecompl:
                 mov     dx,int_data
-                xor     cx,cx
                 mov     al,dl
                 shr     al,7
                 jz      ocomplepos
-                add     dl,1
+                sub     dl,1
 ocomplepos:     
                 mov     al,dl
                 call    printbits
@@ -180,9 +184,7 @@ exit:
 TEXT ends
 
 DATA segment
-input_data      dw 10 dup(0)
-int_data        dw 1  dup(0)
-zm_data         dw 1 dup(0)
+int_data        dw 0  
 hextable        db '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
 DATA ends
 

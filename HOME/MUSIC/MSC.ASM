@@ -33,6 +33,8 @@ loopenv:
                 mov     al,[es]:[bx + 130]
                 cmp     al,0Dh
                 je      openfile
+                cmp     al,00h
+                je      openfile
                 mov     filepath[bx],al
                 call    printchar
                 mov     si,1
@@ -56,6 +58,8 @@ play:
                 mov     ax,21h
                 call    printchar
                 call    newline
+                mov     al,182
+                out     43,al
 playloop:       
                 mov     ah,3Fh
                 mov     bx,filehandle
@@ -64,7 +68,7 @@ playloop:
                 int     21h
                 jb      endplay ;check carry flag
                 cmp     ax,65535
-                je     endplay
+                je      endplay
                 mov     ah,3Fh
                 mov     bx,filehandle
                 mov     cx,2
@@ -75,7 +79,11 @@ playloop:
                 cmp     ax,65535
                 je      endplay
                 mov     bx,duration
-                call    playnote
+                cmp     ax,0
+                jne     noteplay
+                call    pause1
+                jmp     playloop
+noteplay:       call    playnote
                 jmp     playloop 
 endplay:
                 jmp     exit
@@ -152,7 +160,7 @@ note        dw  0
 duration    dw  0
 DATA ends
 
-LOCAL_STACK segment
+LOCAL_STACK segment stack
             dw 100h dup(0)
 top         Label word
 
